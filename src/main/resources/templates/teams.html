@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Teams</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+<header>
+    <nav class="navbar navbar-expand-lg bg-body-tertiary" data-bs-theme="dark">
+        <div class="container-fluid">
+            <div class="collapse navbar-collapse" id="navbarTogglerDemo03">
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                    <li class="nav-item">
+                        <a class="nav-link" th:href="@{/}">Home</a>
+                    </li>
+                    <li class="nav-item">
+                        <a  class="nav-link" th:href="@{/leagues}">Leagues</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" th:href="@{/teams}">Teams</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" th:href="@{/players}">Players</a>
+                    </li>
+                </ul>
+                <ul class="navbar-nav d-flex">
+                    <li class="nav-item" th:if="${currentUser != null}">
+                        <span class="nav-link" th:text="'Welcome, ' + ${currentUser.username}"></span>
+                    </li>
+                    <li class="nav-item" th:if="${currentUser != null}">
+                        <a class="nav-link" th:href="@{/logout}" style="margin-left: 10px;">Logout</a>
+                    </li>
+                    <li class="nav-item" th:if="${currentUser == null}">
+                        <a class="nav-link" th:href="@{/login}">Login</a>
+                    </li>
+                    <li class="nav-item" th:if="${currentUser == null}">
+                        <a class="nav-link" th:href="@{/register}">Sign Up</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+</header>
+<div class="container mt-4">
+    <h2>Team Performance Tracker</h2>
+    <div class="mb-3">
+        <label for="teamSelect" class="form-label">Select Team</label>
+        <select id="teamSelect" class="form-select"></select>
+    </div>
+    <div id="statsContainer" style="display: none;">
+        <h3>Statistics</h3>
+        <ul>
+            <li><strong>Total Matches:</strong> <span id="totalMatches"></span></li>
+            <li><strong>Wins:</strong> <span id="wins"></span></li>
+            <li><strong>Draws:</strong> <span id="draws"></span></li>
+            <li><strong>Losses:</strong> <span id="losses"></span></li>
+            <li><strong>Goals Scored:</strong> <span id="goalsScored"></span></li>
+            <li><strong>Goals Conceded:</strong> <span id="goalsConceded"></span></li>
+        </ul>
+        <table class="table">
+            <thead>
+            <tr>
+                <th>Date</th>
+                <th>Score</th>
+                <th>Result</th>
+            </tr>
+            </thead>
+            <tbody id="performanceTableBody"></tbody>
+        </table>
+        <canvas id="performanceChart" style="width:auto; height:200px;"></canvas>
+    </div>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", () => {
+        loadTeams();
+
+        document.getElementById("teamSelect").addEventListener("change", async (e) => {
+            const teamId = e.target.value;
+            if (teamId) {
+                await loadTeamStats(teamId);
+            }
+        });
+    });
+
+    async function loadTeams() {
+        try {
+            const response = await fetch("/api/teams");
+            if (response.ok) {
+                const teams = await response.json();
+                const teamSelect = document.getElementById("teamSelect");
+                teamSelect.innerHTML = "<option value=''>Select a team</option>";
+                teams.forEach(team => {
+                    const option = document.createElement("option");
+                    option.value = team.id;
+                    option.textContent = team.name;
+                    teamSelect.appendChild(option);
+                });
+            } else {
+                console.error("Failed to load teams.");
+            }
+        } catch (error) {
+            console.error("Error loading teams:", error);
+        }
+    }
+
+   async function loadTeamStats(teamId) {
+    try {
+        const response = await fetch(`/api/matches/team/${teamId}`);
+        if (response.ok) {
+            const matches = await response.json();
+
+            const totalMatches = matches.length;
+            let wins = 0, draws = 0, losses = 0;
+            let goalsScored = 0, goalsConceded = 0;
+
+            matches.forEach(match => {
+                let isHomeTeam = false;
+                if (match.homeTeamId === Number(teamId)) {
+                    isHomeTeam = true;
+                }
+                const scored = isHomeTeam ? match.homeTeamScore : match.awayTeamScore;
+                const conceded = isHomeTeam ? match.awayTeamScore : match.homeTeamScore;
+
+                goalsScored += scored;
+                goalsConceded += conceded;
+
+                if (scored > conceded) {
+                    wins++;
+                    match.result = "Win";
+                } else if (scored === conceded) {
+                    draws++;
+                    match.result = "Draw";
+                } else {
+                    losses++;
+                    match.result = "Loss";
+                }
+            });
+
+            document.getElementById("totalMatches").textContent = totalMatches;
+            document.getElementById("wins").textContent = wins;
+            document.getElementById("draws").textContent = draws;
+            document.getElementById("losses").textContent = losses;
+            document.getElementById("goalsScored").textContent = goalsScored;
+            document.getElementById("goalsConceded").textContent = goalsConceded;
+
+            const performanceTableBody = document.getElementById("performanceTableBody");
+            performanceTableBody.innerHTML = matches.map(match => `
+                <tr>
+                    <td>${new Date(match.matchDate).toLocaleDateString()}</td>
+                    <td>${match.homeTeamName} (${match.homeTeamScore}) vs ${match.awayTeamName} (${match.awayTeamScore})</td>
+                    <td>${match.result}</td>
+                </tr>
+            `).join("");
+
+            const matchDates = matches.map(match => new Date(match.matchDate).toLocaleDateString());
+            const goalDifferences = matches.map(match => {
+                const isHomeTeam = match.homeTeamId === Number(teamId);
+                const scored = isHomeTeam ? match.homeTeamScore : match.awayTeamScore;
+                const conceded = isHomeTeam ? match.awayTeamScore : match.homeTeamScore;
+                return scored - conceded;
+            });
+
+            displayPerformanceChart({ matchDates, goalDifferences });
+
+            document.getElementById("statsContainer").style.display = "block";
+        } else {
+            console.error("Failed to load team stats.");
+        }
+    } catch (error) {
+        console.error("Error loading team stats:", error);
+    }
+}
+
+
+
+
+
+
+
+
+    let chartInstance;
+
+   function displayPerformanceChart(data) {
+        const ctx = document.getElementById('performanceChart').getContext('2d');
+
+        if (chartInstance) {
+            chartInstance.destroy();
+        }
+
+        chartInstance = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: data.matchDates,
+                datasets: [{
+                    label: 'Goal Difference (Scored - Conceded)',
+                    data: data.goalDifferences,
+                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    borderWidth: 1,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Match Date'
+                        }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Goal Difference'
+                        },
+                        ticks: {
+                            callback: function(value) {
+                                if (Number.isInteger(value)) {
+                                    return value;
+                                }
+                                return null;
+                            },
+                            stepSize: 1
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'top'
+                    }
+                }
+            }
+        });
+    }
+
+</script>
+
+</body>
+</html>

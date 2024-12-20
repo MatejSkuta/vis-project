@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Match Details</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+</head>
+<body>
+<header>
+    <nav class="navbar navbar-expand-lg bg-body-tertiary" data-bs-theme="dark">
+        <div class="container-fluid">
+            <div class="collapse navbar-collapse" id="navbarTogglerDemo03">
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                    <li class="nav-item">
+                        <a class="nav-link" th:href="@{/}">Home</a>
+                    </li>
+                    <li class="nav-item">
+                        <a  class="nav-link" th:href="@{/leagues}">Leagues</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" th:href="@{/teams}">Teams</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" th:href="@{/players}">Players</a>
+                    </li>
+                </ul>
+                <ul class="navbar-nav d-flex">
+                    <li class="nav-item" th:if="${currentUser != null}">
+                        <span class="nav-link" th:text="'Welcome, ' + ${currentUser.username}"></span>
+                    </li>
+                    <li class="nav-item" th:if="${currentUser != null}">
+                        <a class="nav-link" th:href="@{/logout}" style="margin-left: 10px;">Logout</a>
+                    </li>
+                    <li class="nav-item" th:if="${currentUser == null}">
+                        <a class="nav-link" th:href="@{/login}">Login</a>
+                    </li>
+                    <li class="nav-item" th:if="${currentUser == null}">
+                        <a class="nav-link" th:href="@{/register}">Sign Up</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+</header>
+<main class="container mt-4">
+    <h2 class="text-center">Match Details</h2>
+    <button class="btn btn-secondary mb-4" onclick="window.location.href='/leagues'">Back to Leagues</button>
+    <div class="row mt-4">
+        <!-- Domácí tým -->
+        <div class="col-md-6">
+            <h3>Home Team</h3>
+            <p><strong>Name:</strong> <span id="homeTeamName"></span></p>
+            <p><strong>Score:</strong> <span id="homeScore">0</span></p>
+            <ul id="homeScorersList" class="list-group mb-3">
+                <!-- Seznam střelců domácího týmu -->
+            </ul>
+            <h4>Squad</h4>
+            <table class="table" id="homeSquad">
+                <thead><tr><th>Player</th><th>Jersey Number</th><th>Actions</th></tr></thead>
+                <tbody></tbody>
+            </table>
+            <h4>Available Players</h4>
+            <div class="mb-3">
+                <select id="homePlayerSelect" class="form-select"></select>
+                <input type="number" id="homeJerseyNumber" class="form-control mt-2" placeholder="Enter Jersey Number">
+                <button id="addHomePlayer" class="btn btn-primary mt-2">Add Player</button>
+            </div>
+            <h4>Goals</h4>
+            <div class="mb-3">
+                <select id="homeGoalScorerSelect" class="form-select"></select>
+                <input type="number" id="homeGoalMinuteInput" class="form-control mt-2" placeholder="Minute">
+                <button id="addHomeGoal" class="btn btn-primary mt-2">Add Goal</button>
+            </div>
+        </div>
+        <!-- Hostující tým -->
+        <div class="col-md-6">
+            <h3>Away Team</h3>
+            <p><strong>Name:</strong> <span id="awayTeamName"></span></p>
+            <p><strong>Score:</strong> <span id="awayScore">0</span></p>
+            <ul id="awayScorersList" class="list-group mb-3">
+                <!-- Seznam střelců hostujícího týmu -->
+            </ul>
+            <h4>Squad</h4>
+            <table class="table" id="awaySquad">
+                <thead><tr><th>Player</th><th>Jersey Number</th><th>Actions</th></tr></thead>
+                <tbody></tbody>
+            </table>
+            <h4>Available Players</h4>
+            <div class="mb-3">
+                <select id="awayPlayerSelect" class="form-select"></select>
+                <input type="number" id="awayJerseyNumber" class="form-control mt-2" placeholder="Enter Jersey Number">
+                <button id="addAwayPlayer" class="btn btn-primary mt-2">Add Player</button>
+            </div>
+            <h4>Goals</h4>
+            <div class="mb-3">
+                <select id="awayGoalScorerSelect" class="form-select"></select>
+                <input type="number" id="awayGoalMinuteInput" class="form-control mt-2" placeholder="Minute">
+                <button id="addAwayGoal" class="btn btn-primary mt-2">Add Goal</button>
+            </div>
+        </div>
+    </div>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="/scripts/match-detail.js"></script>
+</body>
+</html>
